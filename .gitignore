@@ -1,0 +1,17 @@
+# Agent tooling (kept local, not pushed)
+.agents/
+skills-lock.json
+
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Env & secrets
+.env
+.env.*
+
+# OS/editor
+.DS_Store
+Thumbs.db
