@@ -11,6 +11,8 @@ coverage/
 # Env & secrets
 .env
 .env.*
+# ...except the template, which is safe to commit
+!.env.example
 
 # OS/editor
 .DS_Store
