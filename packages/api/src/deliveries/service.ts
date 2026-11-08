@@ -1,5 +1,4 @@
-import { insertDelivery, getDeliveryWithReport } from "./db.js";
-import type { DeliveryRecord, DeliveryStatus, Report } from "@bowled/shared";
+import { insertDelivery, getDeliveryWithReport } from './db.js';
 
 /** Service layer for delivery-related operations. */
 export async function createDelivery(params: {
@@ -11,10 +10,7 @@ export async function createDelivery(params: {
   return await insertDelivery(params);
 }
 
-export async function fetchDeliveryWithReport(deliveryId: string): Promise<{
-  delivery: any;
-  analysis: any | null;
-} | null> {
+export async function fetchDeliveryWithReport(deliveryId: string): Promise<{ delivery: any; analysis: any | null } | null> {
   return await getDeliveryWithReport(deliveryId);
 }
 

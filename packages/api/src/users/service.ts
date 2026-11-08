@@ -1,5 +1,4 @@
-import { upsertUserByKey, upsertDevice } from "./db.js";
-import type { DeliveryRecord, DeliveryStatus, Report } from "@bowled/shared";
+import { upsertUserByKey, upsertDevice } from '../db.js';
 
 /** Service layer for user-related operations. */
 export async function createUser(apiKey: string): Promise<{ id: string }> {
