@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Base sets "types": [], which disables automatic @types inclusion; the
+    // worker uses Node APIs everywhere, so pull them back in explicitly.
+    "types": ["node"]
+  },
+  "include": ["src", "test"]
+}

@@ -1,0 +1,28 @@
+{
+  "name": "@bowled/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "express": "^5",
+    "busboy": "^1.5",
+    "bullmq": "^6.7.2",
+    "pg": "^8.23.1",
+    "@bowled/shared": "workspace:*",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5",
+    "@types/busboy": "^1.5",
+    "@types/node": "^20.14.2",
+    "tsx": "^4.23.15",
+    "typescript": "^5.7.2"
+  }
+}

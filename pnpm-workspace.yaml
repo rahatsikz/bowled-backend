@@ -3,3 +3,6 @@ packages:
 
 allowBuilds:
   esbuild: true
+
+minimumReleaseAgeExclude:
+  - bullmq@6.7.2
