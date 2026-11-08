@@ -1,0 +1,78 @@
+# Bowled backend — full stack for local/dev (single VPS deploy uses the same stack).
+# ffmpeg is bundled in the worker image; a MediaPipe model is NOT bundled (v1 must
+# pass MEDIAPIPE_MODEL_PATH/MEDIAPIPE_WASM_DIR via a ./models mount, else the
+# worker fails its jobs honestly with a clear reason).
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: bowled
+      POSTGRES_PASSWORD: bowled
+      POSTGRES_DB: bowled
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./packages/shared/src/db/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bowled -d bowled"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+    environment:
+      PORT: "3000"
+      DATABASE_URL: postgres://bowled:bowled@postgres:5432/bowled
+      REDIS_URL: redis://redis:6379
+      UPLOAD_DIR: /data/uploads
+      MAX_UPLOAD_BYTES: "${MAX_UPLOAD_BYTES:-83886080}"
+    volumes:
+      - uploads:/data/uploads
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: packages/worker/Dockerfile
+    environment:
+      DATABASE_URL: postgres://bowled:bowled@postgres:5432/bowled
+      REDIS_URL: redis://redis:6379
+      WORKER_CONCURRENCY: "${WORKER_CONCURRENCY:-2}"
+      VIDEO_DIR: /data/uploads
+      MEDIAPIPE_MODEL_PATH: "/models/pose_landmarker_lite.task"
+      MEDIAPIPE_WASM_DIR: "/models/wasm"
+      # Optional report paraphraser; omit all three for template-only reports.
+      LLM_BASE_URL: "${LLM_BASE_URL:-}"
+      LLM_MODEL: "${LLM_MODEL:-}"
+      LLM_API_KEY: "${LLM_API_KEY:-}"
+      # Optional FCM notifications; omit to use the Noop notifier.
+      FIREBASE_SERVICE_ACCOUNT_PATH: "${FIREBASE_SERVICE_ACCOUNT_PATH:-}"
+    volumes:
+      - uploads:/data/uploads
+      - ./models:/models:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  uploads:

@@ -1,13 +1,18 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "bowled-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bowled backend: delivery-upload API, bounded-concurrency analysis worker, and the elbow-extension analysis pipeline.",
+  "type": "module",
+  "packageManager": "pnpm@12.18.0",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "pnpm -r --if-present run test",
+    "check": "pnpm -r --if-present run check"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
 }
