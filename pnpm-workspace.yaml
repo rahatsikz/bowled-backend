@@ -3,6 +3,11 @@ packages:
 
 allowBuilds:
   esbuild: true
+  # Explicitly denied (previously skipped via onlyBuiltDependencies; scripts
+  # are optional native accelerators, packages work without them).
+  "@firebase/util": false
+  msgpackr-extract: false
+  protobufjs: false
 
 minimumReleaseAgeExclude:
   - bullmq@6.7.2

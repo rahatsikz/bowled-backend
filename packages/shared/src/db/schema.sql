@@ -1,4 +1,7 @@
--- Schema shared by api and worker (CREATE IF NOT EXISTS, idempotent on boot).
+-- Authoritative database schema, applied by Postgres on new volume
+-- initialization (mounted into /docker-entrypoint-initdb.d in
+-- docker-compose.yml). Non-Compose setups must apply this file manually;
+-- later schema changes go through numbered migrations.
 
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

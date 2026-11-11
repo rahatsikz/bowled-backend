@@ -3,8 +3,9 @@
  * state flows through here; no SQL is allowed outside this module in the
  * worker.
  *
- * NOTE: SCHEMA_SQL is inlined from the canonical source, which lives at
- * packages/shared/src/db/schema.sql. Keep the copy identical.
+ * The schema itself is authoritative in packages/shared/src/db/schema.sql,
+ * applied by Postgres on database volume initialization (see
+ * docker-compose.yml). This module never creates tables.
  */
 
 import pg from "pg";
@@ -14,47 +15,7 @@ import type {
   Report,
 } from "@bowled/shared";
 
-const SCHEMA_SQL = `
-CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  api_key TEXT NOT NULL UNIQUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS devices (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id),
-  push_token TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (user_id, push_token)
-);
-
-CREATE TABLE IF NOT EXISTS deliveries (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id),
-  video_path TEXT NOT NULL,
-  delivery_angle TEXT NOT NULL CHECK (delivery_angle = 'side-on'),
-  capture_fps INTEGER NOT NULL CHECK (capture_fps > 0),
-  status TEXT NOT NULL CHECK (status IN ('queued', 'processing', 'complete', 'failed')),
-  failure_reason TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS analyses (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  delivery_id UUID NOT NULL UNIQUE REFERENCES deliveries(id),
-  status TEXT NOT NULL CHECK (status IN ('complete', 'failed')),
-  report JSONB,
-  failure_reason TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-`;
-
 export type Db = {
-  /** Idempotent schema boot. Returns false on failure; the caller (index.ts)
-   * logs a warning and falls back to assuming the schema already exists. */
-  ensureSchema(): Promise<boolean>;
   getDelivery(id: string): Promise<DeliveryRecord | null>;
   setDeliveryStatus(id: string, status: DeliveryStatus, failureReason?: string | null): Promise<void>;
   /** Upsert the completed analysis row (status 'complete') for the Delivery. */
@@ -72,16 +33,6 @@ export function makeDb(): Db {
   const pool = new pg.Pool(
     process.env.DATABASE_URL ? { connectionString: process.env.DATABASE_URL } : {},
   );
-
-  async function ensureSchema(): Promise<boolean> {
-    try {
-      await pool.query(SCHEMA_SQL);
-      return true;
-    } catch (error) {
-      console.warn(`worker: ensureSchema failed: ${error instanceof Error ? error.message : String(error)}`);
-      return false;
-    }
-  }
 
   async function getDelivery(id: string): Promise<DeliveryRecord | null> {
     const { rows } = await pool.query(
@@ -157,7 +108,7 @@ export function makeDb(): Db {
     return row ? row.push_token : null;
   }
 
-  return { ensureSchema, getDelivery, setDeliveryStatus, setAnalysisResult, setAnalysisFailed, getDevicePushToken, close: () => pool.end() };
+  return { getDelivery, setDeliveryStatus, setAnalysisResult, setAnalysisFailed, getDevicePushToken, close: () => pool.end() };
 }
 
 function toIso(value: Date | string): string {

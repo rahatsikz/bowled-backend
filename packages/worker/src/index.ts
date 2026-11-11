@@ -17,8 +17,10 @@ import "dotenv/config";
 import path from "path";
 import fs from "fs";
 import { Worker } from "bullmq";
+import { Redis } from "ioredis";
 import { makeDb } from "./db.js";
 import { FrameExtractor } from "./extraction/types.js";
+import { SyntheticExtractor } from "./extraction/test-extractor.js";
 import { FfmpegMediaPipeExtractor } from "./extraction/ffmpeg-mediapipe.js";
 import { analyzeDelivery } from "@bowled/analysis";
 import { FcmNotifier, NoopNotifier } from "./notify.js";
@@ -36,7 +38,7 @@ function makeExtractor(): FrameExtractor {
   const testMode = process.env.TEST_EXTRACTION_MODE === "1";
   if (testMode) {
     console.log("Worker: TEST_EXTRACTION_MODE=enabled — using synthetic extractor");
-    return new (require("./test-extractor").SyntheticExtractor)();
+    return new SyntheticExtractor();
   }
   const wasmDir = process.env.MEDIAPIPE_WASM_DIR;
   const modelPath = process.env.MEDIAPIPE_MODEL_PATH;
@@ -152,10 +154,13 @@ async function main() {
   }
 
   const db = makeDb();
-  await db.ensureSchema();
 
   const extractor = makeExtractor();
   const notifier = makeNotifier();
+
+  // BullMQ v6 takes an already-constructed Redis client (it no longer bundles
+  // one); maxRetriesPerRequest: null is required for blocking job waits.
+  const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
 
   // BullMQ worker
   const worker = new Worker(
@@ -165,7 +170,7 @@ async function main() {
       await processDelivery(deliveryId, db, extractor, notifier);
     },
     {
-      connection: { redisUrl },
+      connection,
       concurrency: workerConcurrency,
       // Per-job maxAttempts is set by the API when enqueueing the job.
       // The worker itself does not impose a global cap; our code

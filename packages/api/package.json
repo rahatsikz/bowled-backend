@@ -11,16 +11,17 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "express": "^5",
-    "busboy": "^1.5",
-    "bullmq": "^6.7.2",
-    "pg": "^8.23.1",
     "@bowled/shared": "workspace:*",
-    "dotenv": "^16.4.5"
+    "bullmq": "^6.7.2",
+    "busboy": "^1.5",
+    "dotenv": "^16.4.5",
+    "express": "^5",
+    "ioredis": "^6.0.0",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
-    "@types/express": "^5",
     "@types/busboy": "^1.5",
+    "@types/express": "^5",
     "@types/node": "^20.14.2",
     "tsx": "^4.23.15",
     "typescript": "^5.7.2"

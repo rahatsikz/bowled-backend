@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
 import { createQueue } from './queue.js';
-import { ensureSchema } from './users/db.js';
 import { setupUsersRoutes } from './users/route.js';
 import { setupDeliveriesRoutes } from './deliveries/route.js';
 import { Pool } from 'pg';
@@ -12,9 +11,6 @@ export function createApp(deps: { redisUrl: string }) {
   });
   const queue = createQueue(deps.redisUrl);
   const maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES ?? 83886080);
-
-  // Ensure schema on first request (best-effort; won't block server start)
-  ensureSchema().catch(console.warn);
 
   const app = express();
   app.use(express.json({ limit: '1mb' }));
@@ -28,3 +24,18 @@ export function createApp(deps: { redisUrl: string }) {
 
   return app;
 }
+
+// ---------------------------------------------------------------------------
+// Bootstrap
+// ---------------------------------------------------------------------------
+
+const redisUrl = process.env.REDIS_URL;
+if (!redisUrl) {
+  console.error("FATAL: REDIS_URL must be set");
+  process.exit(1);
+}
+
+const port = Number(process.env.PORT ?? 3000);
+createApp({ redisUrl }).listen(port, () => {
+  console.log(`api listening on :${port}`);
+});
