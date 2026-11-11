@@ -204,6 +204,9 @@ importers:
 
   packages/api:
     dependencies:
+      '@bowled/db':
+        specifier: workspace:*
+        version: link:../db
       '@bowled/shared':
         specifier: workspace:*
         version: link:../shared
@@ -242,6 +245,25 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
+  packages/db:
+    dependencies:
+      '@bowled/shared':
+        specifier: workspace:*
+        version: link:../shared
+      pg:
+        specifier: ^8.23.1
+        version: 8.23.1
+    devDependencies:
+      '@types/node':
+        specifier: ^20.14.2
+        version: 20.19.43
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   packages/shared: {}
 
   packages/worker:
@@ -249,6 +271,9 @@ importers:
       '@bowled/analysis':
         specifier: workspace:*
         version: link:../analysis
+      '@bowled/db':
+        specifier: workspace:*
+        version: link:../db
       '@bowled/shared':
         specifier: workspace:*
         version: link:../shared

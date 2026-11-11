@@ -11,6 +11,7 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
+    "@bowled/db": "workspace:*",
     "@bowled/shared": "workspace:*",
     "bullmq": "^6.7.2",
     "busboy": "^1.5",

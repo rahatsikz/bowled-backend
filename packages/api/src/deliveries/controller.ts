@@ -1,21 +1,28 @@
 import { Request, Response } from "express";
 import { createDelivery, fetchDeliveryWithReport } from "./service.js";
-import type { DeliveryRecord, DeliveryStatus, Report } from "@bowled/shared";
+import type { ApiDb } from "../db.js";
 
 /** Controller handling delivery-related HTTP requests. */
 export class DeliveriesController {
+  constructor(private readonly db: ApiDb) {}
+
   /** POST /deliveries - Upload a new delivery (multipart/form-data) */
-  static async upload(req: Request, res: Response): Promise<void> {
+  async upload(req: Request, res: Response): Promise<void> {
     try {
-      const { userId } = req.body;
-      const { videoPath, deliveryAngle, captureFps } = req.body;
+      const { userId, videoPath, deliveryAngle, captureFps } = req.body;
 
       if (!videoPath || !deliveryAngle) {
         res.status(400).json({ error: "videoPath and deliveryAngle required" });
         return;
       }
 
-      const result = await createDelivery({
+      // v1 supports side-on only (schema CHECK enforces the same).
+      if (deliveryAngle !== "side-on") {
+        res.status(400).json({ error: "unsupported deliveryAngle" });
+        return;
+      }
+
+      const result = await createDelivery(this.db, {
         userId: userId || "anonymous",
         videoPath,
         deliveryAngle,
@@ -30,9 +37,9 @@ export class DeliveriesController {
   }
 
   /** GET /deliveries/:id - Get delivery with report */
-  static async getById(req: Request, res: Response): Promise<{ delivery: any; analysis: any } | null> {
+  async getById(req: Request, res: Response): Promise<{ delivery: unknown; analysis: unknown } | null> {
     const deliveryId = req.params.id as string;
-    const result = await fetchDeliveryWithReport(deliveryId);
+    const result = await fetchDeliveryWithReport(this.db, deliveryId);
     if (!result) {
       return null;
     }

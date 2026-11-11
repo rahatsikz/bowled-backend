@@ -1,20 +1,16 @@
-import { insertDelivery, getDeliveryWithReport } from './db.js';
+import type { ApiDb } from '../db.js';
+import type { DeliveryWithReport } from '@bowled/db';
 
 /** Service layer for delivery-related operations. */
-export async function createDelivery(params: {
+export async function createDelivery(db: ApiDb, params: {
   userId: string;
   videoPath: string;
-  deliveryAngle: string;
+  deliveryAngle: 'side-on';
   captureFps: number;
-}): Promise<{ id: string; status: string }> {
-  return await insertDelivery(params);
+}): Promise<{ id: string; status: 'queued' }> {
+  return await db.insertDelivery(params);
 }
 
-export async function fetchDeliveryWithReport(deliveryId: string): Promise<{ delivery: any; analysis: any | null } | null> {
-  return await getDeliveryWithReport(deliveryId);
-}
-
-/** Build a minimal delivery deps object for controllers. */
-export function makeDeliveriesDeps() {
-  return { insertDelivery, getDeliveryWithReport };
+export async function fetchDeliveryWithReport(db: ApiDb, deliveryId: string): Promise<DeliveryWithReport | null> {
+  return await db.getDeliveryWithReport(deliveryId);
 }

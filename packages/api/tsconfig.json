@@ -3,7 +3,8 @@
   "compilerOptions": {
     "types": ["node", "pg"],
     "paths": {
-      "@bowled/shared": ["../shared/src/index.ts"]
+      "@bowled/shared": ["../shared/src/index.ts"],
+      "@bowled/db": ["../db/src/index.ts"]
     }
   },
   "include": ["src"]

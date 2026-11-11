@@ -18,7 +18,7 @@ import path from "path";
 import fs from "fs";
 import { Worker } from "bullmq";
 import { Redis } from "ioredis";
-import { makeDb } from "./db.js";
+import { makeDb, type Db } from "./db.js";
 import { FrameExtractor } from "./extraction/types.js";
 import { SyntheticExtractor } from "./extraction/test-extractor.js";
 import { FfmpegMediaPipeExtractor } from "./extraction/ffmpeg-mediapipe.js";
@@ -75,7 +75,7 @@ interface ProcessJob {
 
 async function processDelivery(
   deliveryId: string,
-  db: ReturnType<typeof makeDb>,
+  db: Db,
   extractor: FrameExtractor,
   notifier: ReturnType<typeof makeNotifier>,
 ): Promise<void> {

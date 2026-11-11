@@ -1,46 +1,32 @@
-import { Pool } from "pg";
-import type { DeliveryRecord, DeliveryStatus, Report } from "@bowled/shared";
+/**
+ * API-owned DB facade over @bowled/db. The API process creates its pool in
+ * index.ts, injects it here, and closes it via close() on shutdown. The
+ * interface is limited to the operations the API actually uses; the worker
+ * composes its own from the same package.
+ */
 
-/** Shared PostgreSQL pool — created once, reused by all functions. */
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+import type { DbPool, DeliveryWithReport } from "@bowled/db";
+import { makeDeliveriesDb, makeDevicesDb, makeUsersDb } from "@bowled/db";
 
-/** Upsert user by API key; returns { id }. */
-export async function upsertUserByKey(apiKey: string): Promise<{ id: string }> {
-  const { rows } = await pool.query(
-    `INSERT INTO users (api_key) VALUES ($1)
-     ON CONFLICT (api_key) DO NOTHING
-     RETURNING id`,
-    [apiKey],
-  );
-  if (rows.length > 0) return { id: rows[0].id };
-  const { rows: r2 } = await pool.query(
-    `SELECT id FROM users WHERE api_key = $1`,
-    [apiKey],
-  );
-  return { id: r2[0].id };
-}
+type DeliveriesDb = ReturnType<typeof makeDeliveriesDb>;
 
-/** Upsert device for a user; returns device id. */
-export async function upsertDevice(userId: string, pushToken: string): Promise<string> {
-  const { rows } = await pool.query(
-    `INSERT INTO devices (user_id, push_token) VALUES ($1, $2)
-     ON CONFLICT (user_id, push_token) DO UPDATE SET push_token = EXCLUDED.push_token
-     RETURNING id`,
-    [userId, pushToken],
-  );
-  return rows[0].id;
-}
+export type ApiDb = Pick<DeliveriesDb, "insertDelivery" | "getDeliveryWithReport"> &
+  ReturnType<typeof makeUsersDb> &
+  Pick<ReturnType<typeof makeDevicesDb>, "upsertDevice"> & {
+    /** Close the API's pool. */
+    close(): Promise<void>;
+  };
 
-/** Build a consolidated Db API object for backwards compatibility. */
-export function makeApiDb(pool: Pool) {
+export function makeApiDb(pool: DbPool): ApiDb {
+  const users = makeUsersDb(pool);
+  const devices = makeDevicesDb(pool);
+  const deliveries = makeDeliveriesDb(pool);
+
   return {
-    upsertUserByKey: (apiKey: string) => upsertUserByKey(apiKey),
-    upsertDevice: (userId: string, pushToken: string) => upsertDevice(userId, pushToken),
-    setDeliveryStatus: (id: string, status: string, reason?: string) => {
-      // Runtime stub - in production would use pool to update status
-      console.log(`Setting delivery ${id} status to ${status}`, reason);
-    },
+    upsertUserByKey: users.upsertUserByKey,
+    upsertDevice: devices.upsertDevice,
+    insertDelivery: deliveries.insertDelivery,
+    getDeliveryWithReport: deliveries.getDeliveryWithReport,
+    close: () => pool.end(),
   };
 }
